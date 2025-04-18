@@ -1,4 +1,4 @@
-package net.pesquisae.domain.usecases;
+package net.pesquisae.infra.external.common;
 
 import org.jsoup.nodes.Document;
 
