@@ -2,9 +2,11 @@ package net.pesquisae.domain.usecases;
 
 import net.pesquisae.adapters.repositories.ProdutoRepository;
 import net.pesquisae.adapters.scraper.CapturadorProduto;
+import net.pesquisae.domain.usecases.dto.BuscarProdutosResultadoDTO;
 import net.pesquisae.domain.usecases.dto.CapturarProdutoDTO;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +20,7 @@ public class BuscarProdutosUseCase {
         this.capturadores = capturadores;
     }
 
-    public List<CapturarProdutoDTO> buscar(String query) {
+    public BuscarProdutosResultadoDTO buscar(String query) throws IOException {
         List<CapturarProdutoDTO> resultados = new ArrayList<>();
 
         for(CapturadorProduto capturador : capturadores) {
@@ -29,6 +31,6 @@ public class BuscarProdutosUseCase {
             resultados.addAll(produtos);
         }
 
-        return resultados;
+        return new BuscarProdutosResultadoDTO(resultados, resultados.size());
     }
 }

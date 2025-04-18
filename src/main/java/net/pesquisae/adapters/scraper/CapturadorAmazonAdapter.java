@@ -1,6 +1,6 @@
 package net.pesquisae.adapters.scraper;
 
-import net.pesquisae.adapters.mappers.CapturarProdutoMapper;
+import net.pesquisae.adapters.mappers.CapturadorAmazonMapper;
 import net.pesquisae.domain.usecases.dto.CapturarProdutoDTO;
 import net.pesquisae.infra.external.amazon.AmazonClientImpl;
 import org.jsoup.nodes.Document;
@@ -8,6 +8,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class CapturadorAmazonAdapter implements CapturadorProduto {
     }
 
     @Override
-    public List<CapturarProdutoDTO> buscar(String query) {
+    public List<CapturarProdutoDTO> buscar(String query) throws IOException {
         Document resultados = amazonClientImpl.getResultados(query);
 
         return extrair(resultados);
@@ -33,7 +34,7 @@ public class CapturadorAmazonAdapter implements CapturadorProduto {
         items.remove(0);
 
         for(Element item : items) {
-            CapturarProdutoDTO capturarProdutoDTO = CapturarProdutoMapper.toDTO(item);
+            CapturarProdutoDTO capturarProdutoDTO = CapturadorAmazonMapper.toDTO(item);
 
             if(capturarProdutoDTO == null) continue;
 
