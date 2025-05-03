@@ -18,15 +18,25 @@ public class HtmlClientImpl implements HtmlClient {
         this.marketplace = marketplace;
     }
 
+
+
     @Override
     @Retryable(
             value = { SocketTimeoutException.class, IOException.class },
             maxAttempts = 5,
             backoff = @Backoff(delay = 1000)
-
     )
-    public Document getResultados(String query) throws IOException {
-        String url = marketplace.getBaseUrl() + query;
+    public Document getResultados(String url) throws IOException {
+        if (url == null || url.isEmpty()) {
+            throw new IllegalArgumentException("URL não pode ser nula ou vazia");
+        }
+
+        if (!url.startsWith(marketplace.getBaseUrl())) {
+            throw new IllegalArgumentException("URL não pertence ao marketplace " + marketplace.getNome());
+        }
+
+        String query = url.replace(marketplace.getBaseUrl(), "");
+
         try {
             return Jsoup.connect(url)
                     .timeout(TIMEOUT_MS)
