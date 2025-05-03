@@ -1,49 +1,64 @@
 package net.pesquisae.adapters.scraper;
 
 import net.pesquisae.adapters.mappers.CapturadorMercadoLivreMapper;
+import net.pesquisae.domain.model.Marketplace;
 import net.pesquisae.domain.usecases.dto.CapturarProdutoDTO;
 import net.pesquisae.infra.external.mercadolivre.MercadoLivreClientImpl;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+
 
 @Component
-public class CapturadorMercadoLivreAdapter implements CapturadorProduto {
+public class CapturadorMercadoLivreAdapter extends CapturadorProdutoAdapter {
     private final MercadoLivreClientImpl mercadoLivreClientImpl;
+    private static final Logger logger = LoggerFactory.getLogger(CapturadorMercadoLivreAdapter.class);
 
     public CapturadorMercadoLivreAdapter(MercadoLivreClientImpl mercadoLivreClientImpl) {
         this.mercadoLivreClientImpl = mercadoLivreClientImpl;
     }
 
     @Override
-    public List<CapturarProdutoDTO> buscar(String query) throws IOException {
-        Document resultados = mercadoLivreClientImpl.getResultados(query);
-
-        return extrair(resultados);
+    protected Document carregarPaginaInicial(String query) throws IOException {
+        String url = Marketplace.MERCADO_LIVRE.getBaseUrl() + query;
+        return mercadoLivreClientImpl.getResultados(url);
     }
 
     @Override
-    public List<CapturarProdutoDTO> extrair(Document document) {
-        List<CapturarProdutoDTO> listaCapturarProdutosDTO = new ArrayList<>();
+    protected Document carregarPaginaPorUrl(String url) throws IOException {
+        return mercadoLivreClientImpl.getResultados(url);
+    }
 
-        Elements items = document.select("ol.ui-search-layout")
-                .first()
-                .children()
-                .select("[class=ui-search-layout__item]");
+    @Override
+    protected Elements extrairItens(Document document) {
+        Element layout = document.selectFirst("ol.ui-search-layout");
+        if (layout == null) return new Elements();
+        return layout.children().select("[class=ui-search-layout__item]");
+    }
 
-        for(Element item : items) {
-            CapturarProdutoDTO capturarProdutoDTO = CapturadorMercadoLivreMapper.toDTO(item);
-            if(capturarProdutoDTO == null) continue;
+    @Override
+    protected String construirUrlProximaPagina(Document document, Integer pagina) {
+        String urlAtual = document.select("meta[property=og:url]").attr("content");
 
-            listaCapturarProdutosDTO.add(capturarProdutoDTO);
-        }
+        if (pagina == 1) return urlAtual;
 
-        return listaCapturarProdutosDTO;
+        int offset = 49 + (pagina - 2) * 48;
+        String urlSemOffset = urlAtual.replaceAll("_Desde_\\d+", "");
+        return urlSemOffset.replace("_NoIndex_True", "_Desde_" + offset + "_NoIndex_True");
+    }
+
+    @Override
+    protected CapturarProdutoDTO mapearItem(Element item) {
+        return CapturadorMercadoLivreMapper.toDTO(item);
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
     }
 }
