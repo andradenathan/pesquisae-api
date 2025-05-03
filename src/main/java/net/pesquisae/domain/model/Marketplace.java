@@ -1,7 +1,7 @@
 package net.pesquisae.domain.model;
 
 public enum Marketplace {
-    AMAZON("https://www.amazon.com.br/s?k=", "Amazon"),
+    AMAZON("https://www.amazon.com.br", "Amazon"),
     MERCADO_LIVRE("https://lista.mercadolivre.com.br/", "Mercado Livre");
 
     private final String baseUrl;
