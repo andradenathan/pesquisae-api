@@ -20,7 +20,7 @@ public class CapturadorAmazonMapper {
 
             BigDecimal precoFormatado = new BigDecimal(preco);
             String imageUrl = item.children().select("img").attr("src");
-            String link = "https://www.amazon.com.br" + item.children().select("a").attr("href");
+            String link = Marketplace.AMAZON.getBaseUrl() + item.children().select("a").attr("href");
 
             return new CapturarProdutoDTO(nome, precoFormatado, imageUrl, link, Marketplace.AMAZON.getNome());
         } catch (Exception e) {

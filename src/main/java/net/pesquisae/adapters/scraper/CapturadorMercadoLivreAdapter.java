@@ -2,7 +2,9 @@ package net.pesquisae.adapters.scraper;
 
 import net.pesquisae.adapters.mappers.CapturadorMercadoLivreMapper;
 import net.pesquisae.domain.model.Marketplace;
+import net.pesquisae.domain.usecases.cache.CacheService;
 import net.pesquisae.domain.usecases.dto.CapturarProdutoDTO;
+import net.pesquisae.domain.usecases.dto.ResultadoPaginaCapturador;
 import net.pesquisae.infra.external.mercadolivre.MercadoLivreClientImpl;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.List;
 
 
 @Component
@@ -19,7 +22,9 @@ public class CapturadorMercadoLivreAdapter extends CapturadorProdutoAdapter {
     private final MercadoLivreClientImpl mercadoLivreClientImpl;
     private static final Logger logger = LoggerFactory.getLogger(CapturadorMercadoLivreAdapter.class);
 
-    public CapturadorMercadoLivreAdapter(MercadoLivreClientImpl mercadoLivreClientImpl) {
+    public CapturadorMercadoLivreAdapter(MercadoLivreClientImpl mercadoLivreClientImpl,
+                                         CacheService<ResultadoPaginaCapturador> cacheService) {
+        super(cacheService);
         this.mercadoLivreClientImpl = mercadoLivreClientImpl;
     }
 
@@ -32,6 +37,14 @@ public class CapturadorMercadoLivreAdapter extends CapturadorProdutoAdapter {
     @Override
     protected Document carregarPaginaPorUrl(String url) throws IOException {
         return mercadoLivreClientImpl.getResultados(url);
+    }
+
+    @Override
+    protected Integer calcularTotalDePaginas(Document document) {
+        String seletorNumerosPagina = ".andes-pagination__button:not(.andes-pagination__button--back):not(.andes-pagination__button--current):not(.andes-pagination__button--next)";
+        Elements botoesNumeroPagina = document.select(seletorNumerosPagina);
+
+        return botoesNumeroPagina.size() > 0 ? Integer.parseInt(botoesNumeroPagina.last().text()) : 1;
     }
 
     @Override
@@ -60,5 +73,10 @@ public class CapturadorMercadoLivreAdapter extends CapturadorProdutoAdapter {
     @Override
     protected Logger getLogger() {
         return logger;
+    }
+
+    @Override
+    protected String recuperaChaveCache(String query, Integer pagina) {
+        return "capturador_mercadolivre:" + query + ":" + pagina;
     }
 }

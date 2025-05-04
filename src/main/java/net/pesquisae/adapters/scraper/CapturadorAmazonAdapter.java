@@ -2,7 +2,9 @@ package net.pesquisae.adapters.scraper;
 
 import net.pesquisae.adapters.mappers.CapturadorAmazonMapper;
 import net.pesquisae.domain.model.Marketplace;
+import net.pesquisae.domain.usecases.cache.CacheService;
 import net.pesquisae.domain.usecases.dto.CapturarProdutoDTO;
+import net.pesquisae.domain.usecases.dto.ResultadoPaginaCapturador;
 import net.pesquisae.infra.external.amazon.AmazonClientImpl;
 import org.jsoup.nodes.Document;
 
@@ -20,7 +22,9 @@ public class CapturadorAmazonAdapter extends CapturadorProdutoAdapter {
     private final AmazonClientImpl amazonClientImpl;
     private static final Logger logger = LoggerFactory.getLogger(CapturadorAmazonAdapter.class);
 
-    public CapturadorAmazonAdapter(AmazonClientImpl amazonClientImpl) {
+    public CapturadorAmazonAdapter(AmazonClientImpl amazonClientImpl,
+                                   CacheService<ResultadoPaginaCapturador> cacheService) {
+        super(cacheService);
         this.amazonClientImpl = amazonClientImpl;
     }
 
@@ -32,6 +36,20 @@ public class CapturadorAmazonAdapter extends CapturadorProdutoAdapter {
     @Override
     protected Document carregarPaginaPorUrl(String url) throws IOException {
         return amazonClientImpl.getResultados(url);
+    }
+
+    @Override
+    protected Integer calcularTotalDePaginas(Document document) {
+        Elements botoesPaginacao = document.select(".s-pagination-item").select(".s-pagination-disabled");
+        int totalDePaginas = 1;
+        for(Element botao : botoesPaginacao) {
+            String textoBotao = botao.text();
+            if (textoBotao.matches("\\d+")) {
+                totalDePaginas = Integer.parseInt(textoBotao);
+            }
+        }
+
+        return totalDePaginas;
     }
 
     @Override
@@ -61,5 +79,10 @@ public class CapturadorAmazonAdapter extends CapturadorProdutoAdapter {
     @Override
     protected Logger getLogger() {
         return logger;
+    }
+
+    @Override
+    protected String recuperaChaveCache(String query, Integer pagina) {
+        return "capturador_amazon:" + query + ":" + pagina;
     }
 }
